@@ -1,0 +1,23 @@
+{
+  "name": "access-control-rules",
+  "version": "1.0.0",
+  "description": "Access control for hierarchical data",
+  "keywords": [
+    "access",
+    "control",
+    "rules",
+    "hierarchical",
+    "data"
+  ],
+  "repository": "git+https://github.com/jessetane/access-control.git",
+  "license": "WTFPL",
+  "author": "jesse.tane@gmail.com",
+  "devDependencies": {
+    "standard": "^4.3.2",
+    "tape": "^4.0.0"
+  },
+  "scripts": {
+    "test": "standard && node test",
+    "test-browser": "standard && zuul --local 9999 -- test"
+  }
+}
