@@ -55,7 +55,7 @@ ac.write(rules, null, '/things/0'.split('/'), { nested: { reserved: 42 }})
 ```
 
 ## Test
-`$ npm test`
+`$ npm test`  
 `$ npm run test-browser` (depends on a globally installed [zuul](https://github.com/defunctzombie/zuul))
 
 ## Prior art
