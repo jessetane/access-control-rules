@@ -12,11 +12,11 @@ var rules = {
   '.read': true,
   things: {
     '$id': {
-      '.read': function () {
-        return this.id === '0'
+      '.read': function (cb) {
+        cb(null, this.id === '0')
       },
-      '.write': function (value) {
-        return value && this.id === '0'
+      '.write': function (value, cb) {
+        cb(null, value && this.id === '0')
       },
       nested: {
         reserved: {
@@ -32,26 +32,33 @@ Then check to see if you have permission to read and write stuff:
 ``` javascript
 var ac = require('access-control-rules')
 
-ac.read(rules, null, '/things/0'.split('/'))
-// -> true
+ac.read(rules, null, '/things/0'.split('/'), function (err, allow) {
+  // allow === true
+})
 
-ac.read(rules, null, '/things/1'.split('/'))
-// -> false
+ac.read(rules, null, '/things/1'.split('/'), function (err, allow) {
+  // allow === false
+})
 
-ac.write(rules, null, '/things/0'.split('/'), 'thing!')
-// -> true
+ac.write(rules, null, '/things/0'.split('/'), 'thing!', , function (err, allow) {
+  // allow === true
+})
 
-ac.write(rules, null, '/things/1'.split('/'), 'thing!')
-// -> false
+ac.write(rules, null, '/things/1'.split('/'), 'thing!', function (err, allow) {
+  // allow === false
+})
 
 ac.write(rules, null, '/things/0'.split('/'))
-// -> false
+  // allow === false
+})
 
-ac.write(rules, null, '/things/0'.split('/'), { nested: { x: 42 }})
-// -> true
+ac.write(rules, null, '/things/0'.split('/'), { nested: { x: 42 }}, function (err, allow) {
+  // allow === true
+})
 
-ac.write(rules, null, '/things/0'.split('/'), { nested: { reserved: 42 }})
-// -> false
+ac.write(rules, null, '/things/0'.split('/'), { nested: { reserved: 42 }}, function (err, allow) {
+  // allow === false
+})
 ```
 
 ## Test
