@@ -2,17 +2,36 @@ var tape = require('tape')
 var ac = require('../')
 
 tape('no rules, deny write', function (t) {
-  t.plan(5)
+  t.plan(10)
 
-  t.notOk(ac.write(null, null, [ '' ]))
-  t.notOk(ac.write(null, null, [ '', 'a' ]))
-  t.notOk(ac.write(null, null, [ '', 'a', 'b', 'c' ]))
-  t.notOk(ac.write(null, null, [ 'a' ]))
-  t.notOk(ac.write(null, null, [ 'a', 'b', 'c' ]))
+  ac.write(null, null, [ '' ], null, function (err, allow) {
+    t.error(err)
+    t.notOk(allow)
+
+    ac.write(null, null, [ '', 'a' ], null, function (err, allow) {
+      t.error(err)
+      t.notOk(allow)
+
+      ac.write(null, null, [ '', 'a', 'b', 'c' ], null, function (err, allow) {
+        t.error(err)
+        t.notOk(allow)
+
+        ac.write(null, null, [ 'a' ], null, function (err, allow) {
+          t.error(err)
+          t.notOk(allow)
+
+          ac.write(null, null, [ 'a', 'b', 'c' ], null, function (err, allow) {
+            t.error(err)
+            t.notOk(allow)
+          })
+        })
+      })
+    })
+  })
 })
 
 tape('allow write for valid paths', function (t) {
-  t.plan(6)
+  t.plan(12)
 
   var rules = {
     '.write': true,
@@ -21,63 +40,126 @@ tape('allow write for valid paths', function (t) {
     }
   }
 
-  t.ok(ac.write(rules, null, [ '' ]))
-  t.ok(ac.write(rules, null, [ '', 'a' ]))
-  t.ok(ac.write(rules, null, [ '', 'a', 'b', 'c' ]))
-  t.notOk(ac.write(rules, null, [ '', 'b' ]))
-  t.notOk(ac.write(rules, null, [ 'a' ]))
-  t.notOk(ac.write(rules, null, [ 'a', 'b', 'c' ]))
+  ac.write(rules, null, [ '' ], null, function (err, allow) {
+    t.error(err)
+    t.ok(allow)
+
+    ac.write(rules, null, [ '', 'a' ], null, function (err, allow) {
+      t.error(err)
+      t.ok(allow)
+
+      ac.write(rules, null, [ '', 'a', 'b', 'c' ], null, function (err, allow) {
+        t.error(err)
+        t.ok(allow)
+
+        ac.write(rules, null, [ '', 'b' ], null, function (err, allow) {
+          t.error(err)
+          t.notOk(allow)
+
+          ac.write(rules, null, [ 'a' ], null, function (err, allow) {
+            t.error(err)
+            t.notOk(allow)
+
+            ac.write(rules, null, [ 'a', 'b', 'c' ], null, function (err, allow) {
+              t.error(err)
+              t.notOk(allow)
+            })
+          })
+        })
+      })
+    })
+  })
 })
 
 tape('allow read dynamically', function (t) {
-  t.plan(5)
+  t.plan(10)
 
   var rules = {
-    '.write': function () {
-      return true
+    '.write': function (value, cb) {
+      cb(null, true)
     }
   }
 
-  t.ok(ac.write(rules, null, [ '' ]))
-  t.ok(ac.write(rules, null, [ '', 'a' ]))
-  t.ok(ac.write(rules, null, [ '', 'a', 'b', 'c' ]))
-  t.notOk(ac.write(rules, null, [ 'a' ]))
-  t.notOk(ac.write(rules, null, [ 'a', 'b', 'c' ]))
+  ac.write(rules, null, [ '' ], null, function (err, allow) {
+    t.error(err)
+    t.ok(allow)
+
+    ac.write(rules, null, [ '', 'a' ], null, function (err, allow) {
+      t.error(err)
+      t.ok(allow)
+
+      ac.write(rules, null, [ '', 'a', 'b', 'c' ], null, function (err, allow) {
+        t.error(err)
+        t.ok(allow)
+
+        ac.write(rules, null, [ 'a' ], null, function (err, allow) {
+          t.error(err)
+          t.notOk(allow)
+
+          ac.write(rules, null, [ 'a', 'b', 'c' ], null, function (err, allow) {
+            t.error(err)
+            t.notOk(allow)
+          })
+        })
+      })
+    })
+  })
 })
 
 tape('allow / deny write conditionally', function (t) {
-  t.plan(6)
+  t.plan(12)
 
   var rules = {
-    '.write': function () {
-      return !this.x || this.x === '0'
+    '.write': function (value, cb) {
+      cb(null, !this.x || this.x === '0')
     },
     things: {
       '$id': {
-        '.write': function () {
-          return this.id === '0'
+        '.write': function (value, cb) {
+          cb(null, this.id === '0')
         }
       }
     },
     createButNotDelete: {
-      '.write': function (value) {
-        return value !== undefined && value !== null
+      '.write': function (value, cb) {
+        cb(null, value !== undefined && value !== null)
       }
     }
   }
 
-  t.ok(ac.write(rules, { x: '0' }, [ '' ]))
-  t.notOk(ac.write(rules, { x: '1' }, [ '' ]))
+  ac.write(rules, { x: '0' }, [ '' ], null, function (err, allow) {
+    t.error(err)
+    t.ok(allow)
 
-  t.ok(ac.write(rules, null, [ '', 'things', '0' ]))
-  t.notOk(ac.write(rules, null, [ '', 'things', '1' ]))
+    ac.write(rules, { x: '1' }, [ '' ], null, function (err, allow) {
+      t.error(err)
+      t.notOk(allow)
 
-  t.ok(ac.write(rules, null, [ '', 'createButNotDelete' ], 'value'))
-  t.notOk(ac.write(rules, null, [ '', 'createButNotDelete' ]))
+      ac.write(rules, null, [ '', 'things', '0' ], null, function (err, allow) {
+        t.error(err)
+        t.ok(allow)
+
+        ac.write(rules, null, [ '', 'things', '1' ], null, function (err, allow) {
+          t.error(err)
+          t.notOk(allow)
+
+          ac.write(rules, null, [ '', 'createButNotDelete' ], 'value', function (err, allow) {
+            t.error(err)
+            t.ok(allow)
+
+            ac.write(rules, null, [ '', 'createButNotDelete' ], null, function (err, allow) {
+              t.error(err)
+              t.notOk(allow)
+            })
+          })
+        })
+      })
+    })
+  })
 })
 
 tape('allow write unless value contains reserved field', function (t) {
-  t.plan(4)
+  t.plan(8)
 
   var rules = {
     things: {
@@ -95,9 +177,23 @@ tape('allow write unless value contains reserved field', function (t) {
     }
   }
 
-  t.ok(ac.write(rules, null, '/things/0'.split('/'), { x: 42 }))
-  t.ok(ac.write(rules, null, '/things/0'.split('/'), { nested: { x: 42 }}))
+  ac.write(rules, null, '/things/0'.split('/'), { x: 42 }, function (err, allow) {
+    t.error(err)
+    t.ok(allow)
 
-  t.notOk(ac.write(rules, null, '/things/0'.split('/'), { reserved: 42 }))
-  t.notOk(ac.write(rules, null, '/things/0'.split('/'), { nested: { reserved: 42 }}))
+    ac.write(rules, null, '/things/0'.split('/'), { nested: { x: 42 }}, function (err, allow) {
+      t.error(err)
+      t.ok(allow)
+
+      ac.write(rules, null, '/things/0'.split('/'), { reserved: 42 }, function (err, allow) {
+        t.error(err)
+        t.notOk(allow)
+
+        ac.write(rules, null, '/things/0'.split('/'), { nested: { reserved: 42 }}, function (err, allow) {
+          t.error(err)
+          t.notOk(allow)
+        })
+      })
+    })
+  })
 })
